@@ -160,10 +160,10 @@ class TSNet():
             im1 = np.clip(im1, 0, 255).astype('uint8')
             im2 = im2.astype(np.float32) * 255.0
             im2 = np.clip(im2, 0, 255).astype('uint8')
-        input_filename = os.path.split(args.img_path)[1]
+        input_filename = os.path.split(args.img_path)
         input_filename = os.path.splitext(input_filename[1])
 
         # imsave("results/" + input_filename[0] + "_0" + input_filename[1], im1)
         # imsave("results/" + input_filename[0] + "_1" + input_filename[1], im2)
-        imsave(os.path.join(args.output + input_filename[0] + "_0" + input_filename[1], im1))
-        imsave(os.path.join(args.output + input_filename[0] + "_1" + input_filename[1], im2))
+        imsave(os.path.join(args.output, input_filename[0] + "_0" + input_filename[1]), im1)
+        imsave(os.path.join(args.output, input_filename[0] + "_1" + input_filename[1]), im2)
