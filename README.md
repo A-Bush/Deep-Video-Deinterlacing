@@ -47,3 +47,37 @@ If you find this project useful, we will be grateful if you cite our paper
 
 ### License
 - For academic and non-commercial use only.
+
+
+### Comparison
+
+*TSNet_single_load* MacBook Intel UHD Graphics 630 1536 MB
+```
+DEVICE: /gpu:0
+time: 032.14 sec file: 9009.png
+time: 035.33 sec file: 653.png
+time: 029.76 sec file: 10064.png
+```
+
+*TSNet* MacBook Intel UHD Graphics 630 1536 MB
+```
+DEVICE: /gpu:0
+time: 030.53 sec file: 9009.png
+time: 030.90 sec file: 653.png
+time: 029.26 sec file: 10064.png
+```
+
+*TSNet_single_load*  MacBookPro Intel Core i7-8750H @ 2.2Ghz
+```
+DEVICE: /cpu:0
+time: 036.46 sec file: 9009.png
+time: 032.35 sec file: 653.png
+time: 035.21 sec file: 10064.png
+```
+
+*TSNet* MacBookPro Intel Core i7-8750H @ 2.2Ghz
+```
+DEVICE: /cpu:0
+time: 036.32 sec file: 9009.png
+time: 034.14 sec file: 653.png
+time: 033.29 sec file: 10064.png```
