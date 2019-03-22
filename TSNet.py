@@ -69,7 +69,7 @@ def replaceField(x, input_image, upfield=True):
 def psnr(cost):
     return -10 * log(cost) / log(10.0)
 
-
+# USELESS !!!
 def batch_files(folder_path, image_files, batch_size):
     print("batch_files")
     nb_images = len(image_files)
@@ -86,6 +86,13 @@ def batch_files(folder_path, image_files, batch_size):
             images[i] = img.astype('float32') / 255.
 
         yield (filesnames, images)
+
+
+def list_files(input_list):
+    with open(input_list, 'r') as f:
+        files = f.read().splitlines()
+        assert len(files) > 0, str("NO FILES FOUND IN :" + input_dir)
+        return files
 
 
 class TSNet():
@@ -124,46 +131,52 @@ class TSNet():
         return (y, z, y_full, z_full)
 
     def deinterlace(self, args):
-        img_path = args.img_path
-        print(os.path.split(args.img_path)[1])
-        img = imread(img_path, mode='RGB')
-        img = img.astype('float32') / 255.
-        img_height, img_width, img_nchannels = img.shape
+        out = args.output
+        with open(args.input_list, 'r') as f:
+            files = f.read().splitlines()
+            assert len(files) > 0, str("NO FILES FOUND:")
 
-        input = np.swapaxes(np.swapaxes(img, 0, 2), 1, 2)
-        input = input.reshape((3, img_height, img_width, 1))
-        im1 = np.zeros(img.shape).astype('float32')
-        im2 = np.zeros(img.shape).astype('float32')
-        im1[0::2, :, :] = img[0::2, :, :]
-        im2[1::2, :, :] = img[1::2, :, :]
         if args.gpu > -1:
             device_ = '/gpu:{}'.format(args.gpu)
-            print(device_)
         else:
             device_ = '/cpu:0'
-        with tf.device(device_):
-            x = tf.placeholder(tf.float32, shape=[3, img_height, img_width, 1])
-            y, z, y_full, z_full = self.createNet(x)
-            s_time = time.time()
-        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)) as sess:
-            # Restore variables from disk.
-            saver = tf.train.Saver()
-            saver.restore(sess, args.model)
-            print("Model restored.")
-            lower, upper = sess.run([y, z], feed_dict={x: input})
-            print('time: {} sec'.format(time.time() - s_time))
-            lower_Field = np.swapaxes(np.swapaxes(lower, 1, 2), 0, 2)
-            upper_Field = np.swapaxes(np.swapaxes(upper, 1, 2), 0, 2)
-            im1[1::2, :, :] = lower_Field.reshape((int(img_height / 2), img_width, 3))
-            im2[0::2, :, :] = upper_Field.reshape((int(img_height / 2), img_width, 3))
-            im1 = im1.astype(np.float32) * 255.0
-            im1 = np.clip(im1, 0, 255).astype('uint8')
-            im2 = im2.astype(np.float32) * 255.0
-            im2 = np.clip(im2, 0, 255).astype('uint8')
-        input_filename = os.path.split(args.img_path)
-        input_filename = os.path.splitext(input_filename[1])
+            print(device_)
+        for file in files:
+            img = imread(file, mode='RGB')
+            fname = file.split('/')[-1]
+            name = fname.split('.')[0]
+            ext = fname.split('.')[1]
+            img = img.astype('float32') / 255.
+            img_height, img_width, img_nchannels = img.shape
 
-        # imsave("results/" + input_filename[0] + "_0" + input_filename[1], im1)
-        # imsave("results/" + input_filename[0] + "_1" + input_filename[1], im2)
-        imsave(os.path.join(args.output, input_filename[0] + "_0" + input_filename[1]), im1)
-        imsave(os.path.join(args.output, input_filename[0] + "_1" + input_filename[1]), im2)
+            input = np.swapaxes(np.swapaxes(img, 0, 2), 1, 2)
+            input = input.reshape((3, img_height, img_width, 1))
+            im1 = np.zeros(img.shape).astype('float32')
+            im2 = np.zeros(img.shape).astype('float32')
+            im1[0::2, :, :] = img[0::2, :, :]
+            im2[1::2, :, :] = img[1::2, :, :]
+
+            with tf.device(device_):
+                x = tf.placeholder(tf.float32, shape=[3, img_height, img_width, 1])
+                y, z, y_full, z_full = self.createNet(x)
+                s_time = time.time()
+
+            with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+                # Restore variables from disk.
+                saver = tf.train.Saver()
+                saver.restore(sess, args.model)
+                # print("Model restored.")
+                lower, upper = sess.run([y, z], feed_dict={x: input})
+                print('time: {:06.2f} sec'.format(time.time() - s_time) + " file: " + fname)
+                lower_Field = np.swapaxes(np.swapaxes(lower, 1, 2), 0, 2)
+                upper_Field = np.swapaxes(np.swapaxes(upper, 1, 2), 0, 2)
+                im1[1::2, :, :] = lower_Field.reshape((int(img_height / 2), img_width, 3))
+                im2[0::2, :, :] = upper_Field.reshape((int(img_height / 2), img_width, 3))
+                im1 = im1.astype(np.float32) * 255.0
+                im1 = np.clip(im1, 0, 255).astype('uint8')
+                im2 = im2.astype(np.float32) * 255.0
+                im2 = np.clip(im2, 0, 255).astype('uint8')
+
+            imsave(os.path.join(out, name + "_0." + ext), im1)
+            imsave(os.path.join(out, name + "_1." + ext), im2)
+            tf.reset_default_graph()
