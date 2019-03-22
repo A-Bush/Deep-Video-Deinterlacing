@@ -1,7 +1,3 @@
-# Deep Video Deinterlacing
-
-We run this code using Tensorflow.
-
 ### Architecture
 TensorFlow Implementation of ["Real-time Deep Video Deinterlacing"](https://arxiv.org/abs/1708.00187)
 
@@ -25,13 +21,12 @@ List files to deinterlace
 ```bash
 find /home/ubuntu/pngs/folder -type f -iname "*png" > images.txt
 mkdir output
-
 ```
 
-- Start deinterlacing
+Start deinterlacing
 ```
 . venv/bin/activate
-python runDeinterlacing.py --input_list=images.txt --output=output
+python runDeinterlacing.py --input_list=/path/to/images.txt --output=/path/to/output --gpu=0
 deactivate
 ``` 
 
