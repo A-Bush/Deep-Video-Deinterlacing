@@ -95,7 +95,7 @@ def list_files(input_list):
         return files
 
 
-class TSNet():
+class TSNet_single_load():
 
     def __init__(self):
         self.model_name = "TSNet"
@@ -180,3 +180,90 @@ class TSNet():
             imsave(os.path.join(out, name + "_0." + ext), im1)
             imsave(os.path.join(out, name + "_1." + ext), im2)
             tf.reset_default_graph()
+
+class TSNet():
+
+    def __init__(self):
+        self.model_name = "TSNet"
+
+    def createNet(self, input):
+
+        self.c1 = weight_variable([3, 3, 1, 64], name='deinterlace/t_conv1_w')
+        self.c2 = weight_variable([3, 3, 64, 64], name='deinterlace/t_conv2_w')
+        self.c3 = weight_variable([1, 1, 64, 32], name='deinterlace/t_conv3_w')
+        self.c41 = weight_variable([3, 3, 32, 32], name='deinterlace/t_conv41_w')
+        self.c42 = weight_variable([3, 3, 32, 32], name='deinterlace/t_conv42_w')
+        self.c51 = weight_variable([3, 3, 32, 1], name='deinterlace/t_conv51_w')
+        self.c52 = weight_variable([3, 3, 32, 1], name='deinterlace/t_conv52_w')
+
+        h = relu(conv2d(input, self.c1, name='t_conv1'))
+        h = relu(conv2d(h, self.c2, name='t_conv2'))
+
+        h = conv2d(h, self.c3, name='t_conv3')
+
+        y = conv2d(h, self.c41, name='t_conv41')
+
+        z = conv2d(h, self.c42, name='t_conv42')
+
+        y = conv2d(y, self.c51, strides=[1, 2, 1, 1], name='t_conv51')
+        y_full = replaceField(y, input, upfield=True)
+        z = conv2d(z, self.c52, strides=[1, 2, 1, 1], name='t_conv52')
+        z_full = replaceField(z, input, upfield=False)
+
+        return (y, z, y_full, z_full)
+
+    def deinterlace(self, args):
+        out = args.output
+        with open(args.input_list, 'r') as f:
+            files = f.read().splitlines()
+            assert len(files) > 0, str("NO FILES FOUND:")
+
+        if args.gpu > -1:
+            device_ = '/gpu:{}'.format(args.gpu)
+        else:
+            device_ = '/cpu:0'
+        print('DEVICE: ' + device_)
+
+        file = files[0]
+        img = imread(file, mode='RGB')
+        img = img.astype('float32') / 255.
+        img_height, img_width, img_nchannels = img.shape
+
+        with tf.device(device_):
+            x = tf.placeholder(tf.float32, shape=[3, img_height, img_width, 1])
+            y, z, y_full, z_full = self.createNet(x)
+
+        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+            # Restore variables from disk.
+            saver = tf.train.Saver()
+            saver.restore(sess, args.model)
+            print("Model restored.")
+
+            for file in files:
+                img = imread(file, mode='RGB')
+                fname = file.split('/')[-1]
+                name = fname.split('.')[0]
+                ext = fname.split('.')[1]
+                img = img.astype('float32') / 255.
+
+                input = np.swapaxes(np.swapaxes(img, 0, 2), 1, 2)
+                input = input.reshape((3, img_height, img_width, 1))
+                im1 = np.zeros(img.shape).astype('float32')
+                im2 = np.zeros(img.shape).astype('float32')
+                im1[0::2, :, :] = img[0::2, :, :]
+                im2[1::2, :, :] = img[1::2, :, :]
+
+                s_time = time.time()
+                lower, upper = sess.run([y, z], feed_dict={x: input})
+                print('time: {:06.2f} sec'.format(time.time() - s_time) + " file: " + fname)
+                lower_field = np.swapaxes(np.swapaxes(lower, 1, 2), 0, 2)
+                upper_field = np.swapaxes(np.swapaxes(upper, 1, 2), 0, 2)
+                im1[1::2, :, :] = lower_field.reshape((int(img_height / 2), img_width, 3))
+                im2[0::2, :, :] = upper_field.reshape((int(img_height / 2), img_width, 3))
+                im1 = im1.astype(np.float32) * 255.0
+                im1 = np.clip(im1, 0, 255).astype('uint8')
+                im2 = im2.astype(np.float32) * 255.0
+                im2 = np.clip(im2, 0, 255).astype('uint8')
+
+                imsave(os.path.join(out, name + "_0." + ext), im1)
+                imsave(os.path.join(out, name + "_1." + ext), im2)
