@@ -11,21 +11,28 @@ TensorFlow Implementation of ["Real-time Deep Video Deinterlacing"](https://arxi
 </div>
 </a>
 
-### Results
-<div align="center">
-	<img src="images/10064.png" width="50%"/>
-</div>
-<div align="center">
-	<img src="results/10064_0.png" width="80%"/>
-</div>
-<div align="center">
-	<img src="results/10064_1.png" width="80%"/>
-</div>
 
 ### Run
+Prepare
+```bash
+virtualenv -p /usr/bin/python3.5 venv
+. venv/bin/activate
+pip install -r requirements.txt
+deactivate
+```
+
+List files to deinterlace
+```bash
+find /home/ubuntu/pngs/folder -type f -iname "*png" > images.txt
+mkdir output
+
+```
+
 - Start deinterlacing
 ```
-python runDeinterlacing.py --img_path=images/4.png
+. venv/bin/activate
+python runDeinterlacing.py --input_list=images.txt --output=output
+deactivate
 ``` 
 
 ### Author

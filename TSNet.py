@@ -140,7 +140,7 @@ class TSNet():
             device_ = '/gpu:{}'.format(args.gpu)
         else:
             device_ = '/cpu:0'
-            print(device_)
+        print('DEVICE: ' + device_)
         for file in files:
             img = imread(file, mode='RGB')
             fname = file.split('/')[-1]
