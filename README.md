@@ -80,4 +80,5 @@ time: 035.21 sec file: 10064.png
 DEVICE: /cpu:0
 time: 036.32 sec file: 9009.png
 time: 034.14 sec file: 653.png
-time: 033.29 sec file: 10064.png```
+time: 033.29 sec file: 10064.png
+```
