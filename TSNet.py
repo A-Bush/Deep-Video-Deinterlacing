@@ -214,6 +214,7 @@ class TSNet():
 
     def deinterlace(self, args):
         out = args.output
+        gpu_memory = args.gpu_mem / 100.0
         with open(args.input_list, 'r') as f:
             files = f.read().splitlines()
             assert len(files) > 0, str("NO FILES FOUND:")
@@ -233,7 +234,11 @@ class TSNet():
             x = tf.placeholder(tf.float32, shape=[3, img_height, img_width, 1])
             y, z, y_full, z_full = self.createNet(x)
 
-        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+
+        tconfig = tf.ConfigProto(allow_soft_placement=False, log_device_placement=False)
+        tconfig.gpu_options.per_process_gpu_memory_fraction = gpu_memory
+
+        with tf.Session(config=tconfig) as sess:
             # Restore variables from disk.
             saver = tf.train.Saver()
             saver.restore(sess, args.model)
