@@ -1,0 +1,3 @@
+/Users/abush/github/Deep-Video-Deinterlacing/images/9009.png
+/Users/abush/github/Deep-Video-Deinterlacing/images/653.png
+/Users/abush/github/Deep-Video-Deinterlacing/images/10064.png

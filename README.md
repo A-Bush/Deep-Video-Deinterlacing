@@ -19,7 +19,7 @@ deactivate
 
 List files to deinterlace
 ```bash
-find /home/ubuntu/pngs/folder -type f -iname "*png" > images.txt
+find /home/ubuntu/pngs/folder -type f -iname "*png" | sort > images.txt
 mkdir output
 ```
 
